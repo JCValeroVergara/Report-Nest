@@ -14,4 +14,5 @@ export const  getHelloWorldReport = (options: ReportOptions):TDocumentDefinition
     };
 
     return docDefinition;
-}
+};
+
