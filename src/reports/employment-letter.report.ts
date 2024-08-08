@@ -1,5 +1,5 @@
 import type { Content, StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces";
-import { DateFormatter } from "src/helpers";
+import { headerSection } from "./sections/header.section";
 
 const styles:StyleDictionary = {
     header: {
@@ -30,29 +30,13 @@ const styles:StyleDictionary = {
         color: 'black'
     }
 }
-const logo: Content = {
-    image: 'src/assets/tucan-code-logo.png',
-    width: 100,
-    height: 100,
-    alignment: 'center',
-    margin: [0, 20, 0, 50]
-}
 
 export const getEmploymentLetterReport = (): TDocumentDefinitions => {
 
     const docDefinition: TDocumentDefinitions = {
         styles: styles,
         pageMargins: [40, 60, 40, 60],
-        header: {
-            columns: [
-                logo,
-                {
-                    text: DateFormatter.getFormattedDate(new Date()),
-                    alignment: 'right',
-                    margin: [ 20, 20]
-                }      
-            ] ,
-        },
+        header:  headerSection({ showlogo: true, showdate: true}),
         content: [
             {
                 text: 'CONSTANCIA DE EMPLEO',
