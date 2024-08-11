@@ -1,6 +1,6 @@
 import type { Content, StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces";
 import { footerSection } from "./sections/foote.section";
-import { CurrencyFormarter } from "src/helpers";
+import { CurrencyFormarter, DateFormatter } from "src/helpers";
 
 const logo:Content = {
     image: 'src/assets/tucan-banner.png',
@@ -22,7 +22,57 @@ const style: StyleDictionary = {
     },
 };
 
-export const reportByIdOrder = ():TDocumentDefinitions=> {
+export interface CompleteOrder {
+    order_id:      number;
+    customer_id:   number;
+    order_date:    Date;
+    customers:     Customers;
+    order_details: OrderDetail[];
+}
+
+export interface Customers {
+    customer_id:   number;
+    customer_name: string;
+    contact_name:  string;
+    address:       string;
+    city:          string;
+    postal_code:   string;
+    country:       string;
+}
+
+export interface OrderDetail {
+    order_detail_id: number;
+    order_id:        number;
+    product_id:      number;
+    quantity:        number;
+    products:        Products;
+}
+
+export interface Products {
+    product_id:   number;
+    product_name: string;
+    category_id:  number;
+    unit:         string;
+    price:        string;
+}
+
+
+
+interface OrderReportValues{
+    title? : string;
+    subTitle? : string;
+    data: CompleteOrder;
+}
+
+export const reportByIdOrder = (value: OrderReportValues):TDocumentDefinitions=> {
+    
+    const { data } = value;
+    const { customers, order_details } = data;
+
+    const subTotal = order_details.reduce((acc, item) => acc + (+item.products.price * item.quantity), 0);
+    const IVA = subTotal * 0.16;
+    const total = subTotal + IVA;
+
     return{
         styles: style,
         header: logo,
@@ -40,8 +90,8 @@ export const reportByIdOrder = ():TDocumentDefinitions=> {
                     },
                     {
                         text:[
-                            {text: `Recibo No#: 10255 \n`, bold: true},
-                            `Fecha del recibo: 11 de julio de 2021 \nPagar antes de: 18 de mayo de 2024 \n`,
+                            {text: `Recibo No: ${data.order_id} \n`, bold: true},
+                            `Fecha del recibo: ${DateFormatter.getFormattedDate(data.order_date)}  \nPagar antes de: ${DateFormatter.getFormattedDate(new Date())} \n`,
                         ],
                         alignment: 'right'
                     }
@@ -54,9 +104,9 @@ export const reportByIdOrder = ():TDocumentDefinitions=> {
             {
                 text: [
                     {text:`Cobrar a: \n`, style: 'subHeader'},
-                    `Razón Social: Richter Supermarkt
-                    Michael Holz
-                    Grenzacherweg 237`
+                    `Razón Social: ${customers.customer_name}
+                    ${customers.contact_name}
+                    ${customers.address} - ${customers.city} - ${customers.country}`
                 ],
             },
 
@@ -69,11 +119,13 @@ export const reportByIdOrder = ():TDocumentDefinitions=> {
                     widths: [50,'*', 'auto', 'auto', 'auto'],
                     body: [
                         ['ID','Descripción', 'Cantidad', 'Precio', 'Total'],
-                        [`1`, `Producto 1`, `1`, `$10`, {text:`${CurrencyFormarter.formatCurrency(10)}`, alignment: 'right'}],
-                        [`2`, `Producto 2`, `2`, `$20`, {text:`${CurrencyFormarter.formatCurrency(40)}`, alignment: 'right'}],
-                        [`3`, `Producto 3`, `3`, `$30`, {text:`${CurrencyFormarter.formatCurrency(90)}`, alignment: 'right'}],
-                        [`4`, `Producto 4`, `4`, `$40`, {text:`${CurrencyFormarter.formatCurrency(160)}`, alignment: 'right'}],
-                        [`5`, `Producto 5`, `5`, `$50`, {text:`${CurrencyFormarter.formatCurrency(250)}`, alignment: 'right'}],
+                        ...order_details.map((item, index) => [
+                            index + 1,
+                            item.products.product_name,
+                            item.quantity,
+                            {text:CurrencyFormarter.formatCurrency(+item.products.price), alignment: 'right'},
+                            {text:CurrencyFormarter.formatCurrency(+item.products.price * item.quantity), alignment: 'right'},
+                        ]),
                     ],
                 },
             },
@@ -93,24 +145,14 @@ export const reportByIdOrder = ():TDocumentDefinitions=> {
                             headerRows: 1,
                             widths: ['*', 'auto'],
                             body: [
-                                ['Subtotal:', {text:`${CurrencyFormarter.formatCurrency(550)}`, alignment: 'right'}],
-                                // ['IVA:', `${CurrencyFormarter.formatCurrency(550)}`],
-                                [{text:'Total:', bold: true}, {text:`${CurrencyFormarter.formatCurrency(550)}`, alignment: 'right', bold: true, fontSize: 14}],
+                                ['Subtotal:', {text:`${CurrencyFormarter.formatCurrency(subTotal)}`, alignment: 'right'}],
+                                ['IVA:', {text:`${CurrencyFormarter.formatCurrency(IVA)}`, alignment: 'right'}],
+                                [{text:'Total:', bold: true}, {text:`${CurrencyFormarter.formatCurrency(total)}`, alignment: 'right', bold: true, fontSize: 14}],
                             ],
                         },
                     },
                 ],
             },
-            // {
-            //     layout: "headerLineOnly",
-            //     text: [
-            //         {text:`Detalles de la orden: \n`, style: 'subHeader'},
-            //         `Fecha de la orden: 11 de julio de 2021
-            //         Fecha de entrega: 18 de mayo de 2024
-            //         Método de pago: Tarjeta de crédito
-            //         `,
-            //     ],
-            // },
         ],
     }
 };
