@@ -1,6 +1,10 @@
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
 import { getDonutChart } from "./charts/donut.chart";
 import { headerSection } from "./sections/header.section";
+import { getLineChart } from "./charts/line.chart";
+import { getBarsChart } from "./charts/barsChart";
+import { footerSection } from "./sections/foote.section";
+import { getRadarChart } from "./charts/radarchart";
 
 
 interface TopCountry {
@@ -20,13 +24,19 @@ export const  getStatisticsReport = async (
     options: ReportOptions
 ): Promise<TDocumentDefinitions> => {
 
-    const donutChart = await getDonutChart({
-        entries: options.topCpuntries.map((country) => ({
-            label: country.country,
-            value: country.customers,
-        })),
-        position: 'left',
-    });
+    const [donutChart, lineChart, barChart1, radarChart] = await Promise.all([
+        getDonutChart({
+            entries: options.topCpuntries.map((country) => ({
+                label: country.country,
+                value: country.customers,
+            })),
+            position: 'left',
+        }),
+        getLineChart(),
+        getBarsChart(),
+        getRadarChart(),
+    ]);
+
 
     const docDefinition: TDocumentDefinitions = {
         pageMargins: [40, 100, 40, 60],
@@ -34,7 +44,9 @@ export const  getStatisticsReport = async (
             title: options.title ?? 'Estadísticas de clientes',
             subtitle: options.subTitle ?? 'Top 10 países con más clientes',
         }),
-        content: [{
+        footer: footerSection,
+        content: [
+            {
             columns: [
                 {
                     stack: [
@@ -62,7 +74,28 @@ export const  getStatisticsReport = async (
                     }
                 },
             ],
-        }],
+            },
+            {
+                image: lineChart,
+                width: 500,
+                margin: [0, 20, 0, 20],
+            },
+            {
+                columnGap: 10,
+                columns: [
+                    {
+                        image: barChart1,
+                        width: 250,
+                        margin: [0, 20, 10, 0],
+                    },
+                    {
+                        image: radarChart,
+                        width: 250,
+                        margin: [10, 20, 0, 0],
+                    },
+                ],
+            }
+        ],
     };
 
     return docDefinition;
