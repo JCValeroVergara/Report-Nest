@@ -68,8 +68,6 @@ export class StoreReportService extends PrismaClient implements OnModuleInit {
     
         // Llama a la función importada directamente
         const docDefinition = await getStatisticsReport({
-            title: 'Top 10 Countries',
-            subTitle: 'Customers by country',
             topCpuntries: topCountriesData,
         });
     
